@@ -18,3 +18,6 @@ __pycache__/
 
 /Scenes/
 
+
+# Machine-specific settings (never committed)
+*.private.config.json

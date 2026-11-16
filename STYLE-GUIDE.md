@@ -33,6 +33,7 @@ When `[manual-input] {OngoingContext}` gives a direction for the scene, it **ove
 ## 3. Moans, stutters, climax
 
 * No parentheticals or sound tags (`(sighs)`, `[moan]`) in subtitles.
+* **No written laughs** (`Hehe`, `Haha`, `Hihi`, `ふふっ`/`えへへ` rendered as text) in subtitles (user rule, confirmed on CRVR-286, SIVR-108, HNVR-141, SIVR-102): drop them, don't replace them with another written laugh. If nothing else is left in the cue (a cue that is only a laugh), ask the user before deleting it, or use what is really said in the audio. The lint rule `laugh-sound` flags them.
 * Tier 3 (frantic / climax): broken syntax is wanted: ASCII `--` for cut-off words, `-` for stutters (`c-cumming`), ALL CAPS only on a real vocal peak. Don't translate every repeat of `イク、イク、イク...`: keep 2-3 escalating fragments (`I'm cumming-- c-cumming, I'm CUMMING!`).
 * Mouth-full speech: when she speaks with his cock in her mouth (the `Gap Summary` / analysis says she is sucking/licking while talking), reflect the obstruction by softening sibilants/dentals (`s`/`z`/`t`/`th` -> `th`/`f`) on a few key words: `Mm, thith ith amazing...`, `In my mouf... pleathe cum lotth inthide...`. Don't slur the whole line; the original AI translation often already did it: keep it (the finalizer can't hear the audio, so trust the analysis and the original).
 * Use ASCII `--` and `-`, never the Unicode em-dash `—`.

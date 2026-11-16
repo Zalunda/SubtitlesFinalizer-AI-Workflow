@@ -1,0 +1,7 @@
+{
+  "VideoFolders": [],
+  "SampleRate": 16000,
+  "Channels": 1,
+  "PadMs": 0,
+  "Ffmpeg": "ffmpeg"
+}

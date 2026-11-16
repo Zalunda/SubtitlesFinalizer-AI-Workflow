@@ -24,6 +24,8 @@
       "message": "'cock' repeated: use 'it' / an agency variant sometimes" }
   ],
   "rules": [
+    { "id": "laugh-sound", "severity": "warn", "pattern": "\\b(he-?he(he)*|ha(ha)+|hi(hi)+|fu(fu)+|ufufu|ehehe|giggles?|chuckles?)\\b",
+      "message": "no written laugh (Hehe, Haha...): user rule, drop it (keep a trailing \"Mm...\" if needed)" },
     { "id": "amazing",        "severity": "warn", "pattern": "\\b(amazing|incredible)\\b",
       "message": "flat translation of すごい/やばい: prefer 'insane', 'too much', 'oh god', 'unstoppable', 'something else' (8)" },
     { "id": "properly",       "severity": "warn", "pattern": "\\bproperly\\b",

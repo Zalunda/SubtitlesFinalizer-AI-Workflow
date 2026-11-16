@@ -98,7 +98,12 @@ The format is deliberately simple and can be improved. If you need other info (l
 * **No silent defaults for missing information.** If a scene has no `OngoingContext` or an unknown speaker, say so and ask; don't assume. **Exception (user decision): the TERRAIN-MAP is optional.** Without it, every cue gets `{Silences:none}` (no silence anywhere) and the tool says so; then no split is possible by the terrain, and any split of a cue goes through the romaji / user-confirmation procedure of 2.2.
 * **Obey `[manual-input]` metadata** (`OngoingContext` etc.): it carries the user's creative direction for this scene (e.g. "more about teasing the POV-man").
 * **Adult content:** the material is explicit adult video. Translate it faithfully and uncensored, in the tone of the scene; don't sanitize or moralize.
-* **Git:** this folder is a git repo. **NEVER run `git add`, and don't commit or push** unless the user explicitly asks: the user inspects and stages changes manually. `.mp4`/audio files are git-ignored (see `.gitignore`).
+* **Git (two repositories):** the root folder (tools, `.md`, configs: public) and `Scenes/` (the working files: private, its own `git init`, ignored by the root repo through `/Scenes/`) are **two separate git repos**. **NEVER run `git add`** (the user inspects and stages changes manually), and **never commit or push on my own**. Commit only when the user asks ("commit what I staged"), always with this process:
+  1. `git status` + `git diff --cached --stat` in the repo(s) concerned (root and/or `Scenes/`: run each command inside its own folder); commit **only what is staged**; if something is unstaged or nothing is staged, say so and don't stage it for the user.
+  2. **Show the user a preview of the commit message first** (short subject line + a few bullets of what changed, in the style of the existing `git log`) and **wait for the go** before committing.
+  3. Commit with that message (end it with the attribution footer required by the session, when there is one), then show `git log --oneline -1`. Never `--amend`, `--no-verify` or force options unless the user asks.
+  4. **Push only when the user explicitly asks**, and name the repo and its visibility (root = public, `Scenes/` = private) before pushing. Pushing publishes the content. Before a push of the public repo, check that no scene file is tracked (`git ls-files | findstr Scenes` must print nothing) and that no `*.private.config.json` is.
+  `.mp4`/audio files and `*.private.config.json` are git-ignored (see the `.gitignore` files).
 * **Report faithfully**: if you only finished part of a wave, or a step was skipped, say so.
 
 ---
