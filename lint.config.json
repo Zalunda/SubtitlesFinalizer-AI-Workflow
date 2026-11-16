@@ -1,0 +1,60 @@
+{
+  "_help": [
+    "Rules of tools/lint_srt.py. Edit freely: the tool reads this file every time.",
+    "rule: id (unique), severity (error | warn | info), pattern (Python regex, tested on the cue text, lines joined with a newline),",
+    "      flags ('i' = ignore case, default; use '' for case sensitive), message, enabled (false to switch it off).",
+    "limits: numeric checks on the real timing. severity and value can be changed, enabled=false switches one off.",
+    "Known false positives can be silenced in <scene folder>/lint.ignore.txt: one line per case, '<rule-id> <HH:MM:SS>' (prefix of the cue start time).",
+    "The rules come from STYLE-GUIDE.md (sections 1, 3 and 8)."
+  ],
+  "ignore_cue_text": "^Created by Zalunda",
+  "limits": {
+    "max_line_length":  { "enabled": true,  "value": 42, "severity": "warn",  "message": "line longer than ~42 characters" },
+    "max_lines":        { "enabled": true,  "value": 2,  "severity": "error", "message": "more than 2 lines" },
+    "max_cps":          { "enabled": true,  "value": 20, "severity": "warn",  "message": "reading speed above 20 cps (the post-processing adds 0.3 s / 1 s minimum, so look at the real audio timing)" },
+    "target_cps":       { "enabled": false, "value": 17, "severity": "info",  "message": "reading speed above the 17 cps target" },
+    "orphan_last_line": { "enabled": true,  "value": 1,  "severity": "info",  "message": "last line is a single word (orphan)" }
+  },
+  "repeats": [
+    { "id": "cum-repeat", "severity": "info", "pattern": "\\b(cum|cums|cumming|came|cummed)\\b", "window": 6, "max": 3,
+      "message": "'cum' keeps coming back: vary (finish, let go, shoot, blow, give in, lose it, juice, 'already?', 'close?')" },
+    { "id": "boobs-repeat", "severity": "info", "pattern": "\\b(boobs|tits)\\b", "window": 5, "max": 3,
+      "message": "'boobs' repeated: use 'them' / drop the noun sometimes" },
+    { "id": "cock-repeat", "severity": "info", "pattern": "\\bcock\\b", "window": 5, "max": 3,
+      "message": "'cock' repeated: use 'it' / an agency variant sometimes" }
+  ],
+  "rules": [
+    { "id": "amazing",        "severity": "warn", "pattern": "\\b(amazing|incredible)\\b",
+      "message": "flat translation of すごい/やばい: prefer 'insane', 'too much', 'oh god', 'unstoppable', 'something else' (8)" },
+    { "id": "properly",       "severity": "warn", "pattern": "\\bproperly\\b",
+      "message": "'properly' (ちゃんと) is a red flag for a stiff translation: restructure (8)" },
+    { "id": "for-me",         "severity": "warn", "pattern": "\\b(cum|come|lie back|moan|touch|kiss|feel good|get turned on|get hard|shoot|let it out) for me\\b",
+      "message": "no 'for me' on requests unless 私のために is said (8)" },
+    { "id": "no-no-denial",   "severity": "info", "pattern": "\\bno, no\\b|^no, i'm\\b|^ah+, no, ",
+      "message": "だめ/やめて during arousal = overload: use \"I can't--\" / \"Too much\" (8). Ignore if it is a real refusal" },
+    { "id": "he-him-cock",    "severity": "warn", "pattern": "\\b(he|him|he's|his)\\b",
+      "message": "never 'he/him' for the cock: use 'your cock' / 'it' (2). Ignore if it is really a third person" },
+    { "id": "em-dash",        "severity": "error", "pattern": "[—–]",
+      "message": "use ASCII '--' and '-', never an em/en dash (3)" },
+    { "id": "curly-quotes",   "severity": "warn", "pattern": "[“”‘’]",
+      "message": "use ASCII quotes" },
+    { "id": "parenthetical",  "severity": "error", "pattern": "\\([^)]*\\)|\\[[^\\]]*\\]",
+      "message": "no parentheticals or sound tags in subtitles (3)" },
+    { "id": "avoid-words",    "severity": "warn", "pattern": "\\b(quite|rather|definitely|i wonder if|would you like to|after all|as expected|stiff|climax)\\b",
+      "message": "words to avoid (1): plain, short, concrete words" },
+    { "id": "tag-tail",       "severity": "warn", "pattern": ",\\s*(isn't it|don't you think|aren't you|aren't i|doesn't it|wasn't it|isn't that right)\\?",
+      "message": "clunky tag tail: bake the nuance into the clause or use a short tag (8)" },
+    { "id": "you-love",       "severity": "warn", "pattern": "\\b(you love|you really love)\\b",
+      "message": "avoid 'the X you love so much' (1)" },
+    { "id": "filler",         "severity": "info", "pattern": "\\b(just|even|well|actually|basically|kind of|kinda|go ahead and)\\b",
+      "message": "filler word: keep only if the Japanese has the word (ちゃえ -> just, なんか -> kinda, まあ -> well, も -> even) (8)" },
+    { "id": "favorite-x",     "severity": "info", "pattern": "\byour favou?rite (boobs|tits|cock|spot|part)\b",
+      "message": "'your favorite boobs' reads awkwardly (the user never understood it): 大好きな can be dropped, or restructure (1)" },
+    { "id": "wow",            "severity": "info", "pattern": "\\bwow\\b",
+      "message": "vary やばい/すごい: 'oh god', 'insane', 'too much'... (8)" },
+    { "id": "double-space",   "severity": "error", "pattern": "[ ]{2,}|[ ]+$|^[ ]+",
+      "message": "extra spaces", "flags": "m" },
+    { "id": "space-before-punct", "severity": "warn", "pattern": "[ ][,.?!]",
+      "message": "space before punctuation" }
+  ]
+}

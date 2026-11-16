@@ -1,0 +1,20 @@
+# Videos (may be copied into the scene folders for reference)
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.webm
+*.m4v
+
+# Audio extracted from the videos
+*.wav
+*.pcm
+*.asig
+
+# Python caches
+__pycache__/
+*.pyc
+
+/Scenes/
+
