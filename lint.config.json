@@ -24,6 +24,8 @@
       "message": "'cock' repeated: use 'it' / an agency variant sometimes" }
   ],
   "rules": [
+    { "id": "adverbial-lots", "severity": "warn", "pattern": "\\blots\\b(?!\\s+(of|more)\\b)",
+      "message": "adverbial 'lots' (touch me lots, service you lots) reads as non-native English (user rule): use so much / a lot / more / all over / closely / plenty. 'lots of X' and 'lots more' are fine" },
     { "id": "laugh-sound", "severity": "warn", "pattern": "\\b(he-?he(he)*|ha(ha)+|hi(hi)+|fu(fu)+|ufufu|ehehe|giggles?|chuckles?)\\b",
       "message": "no written laugh (Hehe, Haha...): user rule, drop it (keep a trailing \"Mm...\" if needed)" },
     { "id": "amazing",        "severity": "warn", "pattern": "\\b(amazing|incredible)\\b",

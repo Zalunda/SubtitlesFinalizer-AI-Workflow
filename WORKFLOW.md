@@ -29,7 +29,7 @@ For each cue still holding a metadata block, in order:
    * *Easy*: both VoiceTexts agree (or the difference is trivial), the Japanese makes sense in the context, the translation matches it, the timing fits the terrain.
    * *Suspicious*: the VoiceTexts differ in meaning, the Japanese doesn't fit the conversation (a name, a topic change from nowhere), the analysis contradicts neighbouring cues (e.g. someone "welcomes" a person who is already in the room), a mid-sentence cut between two speakers, a very short or very long cue with no speech under it in the terrain, mumbling/moans transcribed as words.
 3. **Easy cues**: rewrite the translation following the style guide, decide splits/merges (below), then **remove the metadata block**, leaving only timing + subtitle text.
-4. **Suspicious cues**: leave the metadata block and add `[finalizer] {Question:...}` (+ `{Suggestion:...}` if you have a best guess). Don't spend time agonizing: that's what wave 2 is for. If you can finalize with a decent guess but are not sure, finalize it and add an `R:` note in the decisions file: it lands in `<S>-<P>.review.md` for the user's audio check.
+4. **Suspicious cues**: leave the metadata block and add `[finalizer] {Question:...}` (+ `{Suggestion:...}` if you have a best guess). Don't spend time agonizing: that's what wave 2 is for. If you can finalize with a decent guess but are not sure, finalize it and add an `R:` note in the decisions file: it lands in `Scenes/<S>/REVIEW.md` for the user's audio check.
 
 ### Splitting / merging checklist
 * Total subtitle characters per line <= ~42, max 2 lines (see the style guide). Split into two cues instead of making a 3-line cue.
@@ -41,13 +41,14 @@ For each cue still holding a metadata block, in order:
 * When two speakers talk in the same cue, use the dash dialogue format from the style guide.
 
 ### Rules for the work itself
+* **Speaker tags** (`[manual-input] {Talker}`, `[singlevad-ai-refined] {Speaker}`, `Speaker Correction` in the analysis) **are hints for me, not a task for the user**. Use them to pick the voice and the dash dialogues. Put a cue in `REVIEW.md` only when the speaker looks wrong to me **and the translation would differ depending on the speaker**; otherwise just follow the content and the best-supported tag.
 * Work in batches (e.g. 20-40 cues per round), saving progress to the working file after each batch, so progress survives a stop. Loop per batch: `python tools/view_cues.py <file> --count 40` (reads the next unfinalized cues) -> write a decisions file in the scratchpad -> `python tools/apply_cues.py <file> <decisions>`. Never use the Edit/Write tools on the `.srt` (they normalize line endings).
 * Never leave a half-edited cue: either it's finalized (no metadata) or it's untouched/with a `[finalizer]` question.
 * Don't revisit finalized cues, except in wave 3 or if the user asks.
 
 ## Wave 2 - Questions to the user
 
-1. Collect every cue that has a `[finalizer] {Question:...}` into `<S>-<P>.questions.md`, one numbered entry per question, ordered by time:
+1. Collect every cue that has a `[finalizer] {Question:...}` into the scene's `Scenes/<S>/REVIEW.md` (one section per part), one entry per question, ordered by time:
 
    ```markdown
    ### 12:34 - cue "..."          <- timestamp in the video (hh:mm:ss) so the user can jump to it
@@ -60,21 +61,22 @@ For each cue still holding a metadata block, in order:
    ```
    Group questions that need the same check (e.g. "all the cues about the bath scene") and keep them short: the user checks the video, so don't make them read your analysis.
 2. Stop and ask the user to answer. Don't continue guessing.
-3. When the user answers (in `questions.md` or in chat), apply each answer: fix the transcription/translation, finalize the cue, strip its metadata (including the `[finalizer]` lines).
+3. When the user answers (in `REVIEW.md` or in chat), apply each answer: fix the transcription/translation, finalize the cue, strip its metadata (including the `[finalizer]` lines).
 
 ## Wave 3 - Polish and finish
 
 1. Re-read the whole working file from the top, as a viewer would (only the subtitle text), and fix: inconsistent names/terms/pronouns, repeated filler ("Look." x5), tone drifting, tags that don't match the character, anything unnatural.
 2. Run `python tools/lint_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt --min-severity warn` and fix every finding (or add the false positives to `Scenes/<SCENE>/lint.ignore.txt`). Check: no `------- Metadatas -------` left; no overlapping cues; every cue has valid timing; reading speed outliers (flag/fix); each part ends cleanly.
+2b. **Final review by a stronger reviewer (user rule, before `finalize_srt.py`)**: once the lint is clean and every doubt of `REVIEW.md` is resolved, ask the **advisor** (the `advisor` tool, when the session has it; otherwise switch the session to a stronger model, e.g. `/model opus`, as was done on SIVR-108) for a review of the whole scene. The reviewer only sees the conversation, so **first print in the conversation, for every final cue, the English subtitle next to the Japanese of the debug cues it overlaps** (one line per cue: `time | English | Japanese`, produced by `python tools/pair_cues.py <base>.WIP.srt [--from HH:MM:SS --to HH:MM:SS]`; print it in chunks of a few hundred lines). What to look for: meaning errors vs the Japanese, lines that repeat the same word or structure too often (`came`, `Welcome`, `Not yet`...), callbacks to the scene's premise or rules (`not allowed`, a secret, a running joke), fragments left by a merge/split or by a removed laugh, unnatural word order, denial protocol / `だめ` rendering, consistency with the glossary. Put the proposals in `Scenes/<S>/REVIEW.md` under `Suggested improvements` (one line per proposal: cue time, current -> proposed, reason; `- [ ]`), **don't apply them on my own**: the user ticks / edits the ones to keep, then apply them in the WIP (`@!`) and regenerate the final files.
 3. **Do NOT renumber or convert the WIP file** (the user diffs it while you work: renumbering makes the diff unreadable). The numbering and the Windows CRLF line endings are produced at the end by `tools/finalize_srt.py` in the final file.
 4. When the user says the subtitles are final: `python tools/finalize_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt` (adds 0.3 s to every end, minimum 1 s, limited by the next start; writes the final plain `<S>-<P>.srt`; the WIP file is kept). Run it once, last.
 5. Report a final summary (cues finalized / split / merged / questions resolved) and anything you want the user to double-check.
 
 ## Audio clips for the review items (standing rule, user decision)
 
-**Single channel (user decision): `<S>-<P>.review.md` is the ONLY place for questions, doubts and clip tables of a part. Do not repeat them in the chat.** When a part is done, write/update the review.md (sections: *Clips to transcribe* with the numbered table, *Open questions* with an `Answer:` line each, *Cues finalized with a doubt*) and tell the user only: `I created/updated <S>-<P>.review.md` + the counts (cues finalized, questions, clips). Questions that used to go to `questions.md` go to the review.md too. The user answers in the file or in chat; tick the items when resolved.
+**Single channel (user decision): `Scenes/<S>/REVIEW.md` is the ONLY place for questions, doubts and clip tables of a part. Do not repeat them in the chat.** When a part is done, write/update the review.md (sections: *Clips to transcribe* with the numbered table, *Open questions* with an `Answer:` line each, *Cues finalized with a doubt*) and tell the user only: `I created/updated Scenes/<S>/REVIEW.md` + the counts (cues finalized, questions, clips). Questions that used to go to `questions.md` go to the review.md too. The user answers in the file or in chat; tick the items when resolved.
 
-**Before showing the report of a part, always extract the audio clips of every unchecked item of `<S>-<P>.review.md` (and of any open question that audio can answer) with `tools/extract_audio.py`. Never ask the user whether to do it.** Then put in the report a numbered table (order, cue time, current text, duration, what to check) so the user can send the clips to the transcriber in that order.
+**Before showing the report of a part, always extract the audio clips of every unchecked item of `Scenes/<S>/REVIEW.md` (and of any open question that audio can answer) with `tools/extract_audio.py`. Never ask the user whether to do it.** Then put in the report a numbered table (order, cue time, current text, duration, what to check) so the user can send the clips to the transcriber in that order.
 * **Give a small context for each clip in the numbered table (user rule): one or two sentences the user can paste to the transcriber AI along with the clip** (kind of video and setting, who speaks to whom and how, what happens just before and after the clip, from the cue neighbours and the `Gap Summary`), so the transcriber can place the words. Keep it factual and short; don't state my translation as truth, and **don't pass the AI `Gap Summary` / `TranslationAnalysis` on as facts** (it can be wrong and would bias the transcriber): use only what the user confirmed or what is certain (setting, speaker, neighbouring cue texts).
 * `--at HH:MM:SS` takes the cue that *contains* that time: use a time inside the cue (a second after its start), not the review line's rounded time, or the tool picks the previous cue. Check the printed time ranges.
 * **Where is the video?** `extract_audio.py` first looks for `<S>-<P>.mp4` next to the `.srt`. If it is not there, it searches, **recursively**, the folders listed in `VideoFolders` of an `extract_audio.config.json` / `extract_audio.private.config.json` (read from the `.srt`'s folder up to the filesystem root, plus the ones at the repo root; the user's real folders are in `extract_audio.private.config.json` at the repo root, which is git-ignored by `*.private.config.json`) for a file with the same name. So don't ask the user for the video path: just run the tool. Ask only if the tool says it found nothing (the user then adds the folder to `VideoFolders`, or you pass `--video`).
@@ -83,4 +85,4 @@ For each cue still holding a metadata block, in order:
 
 ## Reporting format (end of each wave)
 
-Short and concrete: `Wave 1 of part A: 312 cues finalized (18 split, 9 merged), 41 left with questions. Questions are in HNVR-141-A.questions.md.` Mention anything that surprised you (a systematically bad stretch, a speaker mix-up) because it may point to an upstream problem in the AI process the user can fix.
+Short and concrete: `Wave 1 of part A: 312 cues finalized (18 split, 9 merged), 41 left with questions. Questions are in HNVR-141/REVIEW.md.` Mention anything that surprised you (a systematically bad stretch, a speaker mix-up) because it may point to an upstream problem in the AI process the user can fix.

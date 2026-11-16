@@ -28,7 +28,7 @@ cue(s) by the START TIME of their timing line (HH:MM:SS,mmm):
     D:
 
     R: Not sure about "X": check the audio.   (added to ANY finalize/split/merge block: the cue is finalized as usual and
-                                              a line is appended to <base>.review.md for the user's audio check)
+                                              a line '- [ ] <part> HH:MM:SS | text | doubt' is appended to REVIEW.md of the scene folder for the user's audio check)
 
     @!00:00:20,050                       REDO: '@!' lets a decision replace a cue that is ALREADY finalized (no metadata)
     Okay, taking it off.                 (same text/split/merge rules; use it for later corrections)
@@ -302,21 +302,25 @@ def main():
         f.write(result)
     print("done: " + summary)
     if reviews:
-        # '<base>.review.md' next to the .srt: the cues the assistant is not sure about, for the user's audio check
+        # 'REVIEW.md' in the scene folder (ONE file for all the parts of the scene): the cues the assistant is not sure
+        # about, for the user's audio check. The line starts with the part label (A, B, A-B...).
         base = os.path.basename(args.srt)
         for suffix in (".WIP.srt", ".srt"):
             if base.endswith(suffix):
                 base = base[: -len(suffix)]
                 break
-        review_path = os.path.join(os.path.dirname(os.path.abspath(args.srt)), base + ".review.md")
+        folder = os.path.dirname(os.path.abspath(args.srt))
+        m = re.match(r"^\S*?\d+[ -]([A-Z](?:-[A-Z])?)(?=[ .\[]|$)", base)
+        part = m.group(1) if m else base
+        review_path = os.path.join(folder, "REVIEW.md")
         new_file = not os.path.isfile(review_path)
         with open(review_path, "a", encoding="utf-8", newline="") as f:
             if new_file:
-                f.write("# %s - cues to re-check\n\n" % base)
-                f.write("Cues finalized with a doubt. Listen / ask the transcriber, tick the box when checked "
-                        "(`- [x]`) and tell me the result.\n\n")
+                f.write("# %s - review\n\n" % os.path.basename(folder))
+                f.write("One file for the whole scene (all parts). Cues finalized with a doubt: listen / ask the transcriber, "
+                        "tick the box when checked (`- [x]`) and tell me the result.\n\n")
             for start, lines, notes in reviews:
-                f.write("- [ ] %s | %s | %s\n" % (fmt(start)[:8], " / ".join(lines), " ; ".join(notes)))
+                f.write("- [ ] %s %s | %s | %s\n" % (part, fmt(start)[:8], " / ".join(lines), " ; ".join(notes)))
         print("review notes added to %s (%d)" % (review_path, len(reviews)))
     return 0
 

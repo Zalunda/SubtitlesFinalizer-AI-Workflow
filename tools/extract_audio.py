@@ -30,7 +30,8 @@ video when it is not next to the .srt), "SampleRate", "Channels", "PadMs", "Ffmp
 found from the .srt's folder up to the filesystem root, plus the one at the repo root; the nearest file wins for the single values and
 the "VideoFolders" lists are added together. So the repo-root extract_audio.config.json (public) holds the defaults and an empty VideoFolders, and your
 private extract_audio.private.config.json (also at the repo root, git-ignored) holds the real folders. Command-line options override the config.
-Video not next to the .srt: the tool looks for <srt base name>.mp4 (same name, without ".WIP") in the VideoFolders.
+Video not next to the .srt: the tool looks for <srt base name>.mp4 (same name, without ".WIP") in the VideoFolders; if the video was
+renamed, it falls back to an .mp4 whose name starts with <scene folder name>-<part> (e.g. 3DSVR-1702-C - ...).
 
 Each line printed is numbered in the order of the arguments: the transcriber AI does not see file names, so send the clips in
 that order and give the user the numbered table with the durations.
@@ -118,9 +119,13 @@ def load_config(srt_path):
     return cfg
 
 
-def find_video_in_folders(folders, video_name):
-    """Search each folder recursively for a file named video_name (case-insensitive); first match wins."""
+def find_video_in_folders(folders, video_name, scene=None, part=None):
+    """Search each folder recursively. 1) a file named video_name (case-insensitive); 2) when the video was renamed
+    (e.g. WIP 'DSVR-1702 C' but video '3DSVR-1702-C - Actors - Title.mp4'): an .mp4 that starts with
+    '<scene>-<part>' followed by a space, a dash or a dot. First match wins."""
     wanted = video_name.lower()
+    prefix = ("%s-%s" % (scene, part)).lower() if scene and part else None
+    fallback = None
     for root in folders:
         root = root.strip().strip('"')
         if not os.path.isdir(root):
@@ -128,9 +133,13 @@ def find_video_in_folders(folders, video_name):
             continue
         for dirpath, _dirs, files in os.walk(root):
             for name in files:
-                if name.lower() == wanted:
+                low = name.lower()
+                if low == wanted:
                     return os.path.join(dirpath, name)
-    return None
+                if (fallback is None and prefix and low.endswith(".mp4") and low.startswith(prefix)
+                        and low[len(prefix):len(prefix) + 1] in (" ", "-", ".")):
+                    fallback = os.path.join(dirpath, name)
+    return fallback
 
 
 def main():
@@ -168,7 +177,9 @@ def main():
     if args.ffmpeg is None:
         args.ffmpeg = cfg["Ffmpeg"]
     if not os.path.isfile(video) and not args.video and is_srt:
-        found = find_video_in_folders(cfg["VideoFolders"], os.path.basename(video))
+        scene = os.path.basename(os.path.dirname(os.path.abspath(args.source)))
+        pm = re.match(r"^\S*?\d+[ -]([A-Z](?:-[A-Z])?)(?=[ .\[]|$)", os.path.basename(base_path))
+        found = find_video_in_folders(cfg["VideoFolders"], os.path.basename(video), scene, pm.group(1) if pm else None)
         if found:
             print("video found through VideoFolders of the config: " + found)
             video = found
