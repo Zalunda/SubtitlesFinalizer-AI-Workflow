@@ -63,6 +63,10 @@ For each cue still holding a metadata block, in order:
 2. Stop and ask the user to answer. Don't continue guessing.
 3. When the user answers (in `REVIEW.md` or in chat), apply each answer: fix the transcription/translation, finalize the cue, strip its metadata (including the `[finalizer]` lines).
 
+### Scene name (decided while working on the scene)
+
+Each scene's `REVIEW.md` has a section `## Scene name` with two lines, `Actors: ...` and `Title: ...` (a short, meaningful, recognizable title; the video file name's title when it has one). During the pilot or wave 2, I **suggest** the name there (marked `(suggested)`) and the user confirms or edits it; it is used for the release (`publish_srt.py` file names with a title, and the CHANGES file of "Prepare the batch"). The scripter and paid/free are not part of it (always TODO for the user).
+
 ## Wave 3 - Polish and finish
 
 1. Re-read the whole working file from the top, as a viewer would (only the subtitle text), and fix: inconsistent names/terms/pronouns, repeated filler ("Look." x5), tone drifting, tags that don't match the character, anything unnatural.
@@ -71,6 +75,17 @@ For each cue still holding a metadata block, in order:
 3. **Do NOT renumber or convert the WIP file** (the user diffs it while you work: renumbering makes the diff unreadable). The numbering and the Windows CRLF line endings are produced at the end by `tools/finalize_srt.py` in the final file.
 4. When the user says the subtitles are final: `python tools/finalize_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt` (adds 0.3 s to every end, minimum 1 s, limited by the next start; writes the final plain `<S>-<P>.srt`; the WIP file is kept). Run it once, last.
 5. Report a final summary (cues finalized / split / merged / questions resolved) and anything you want the user to double-check.
+
+## Publishing the final files (after wave 3, when the user asks)
+
+Run `python tools/publish_srt.py <SCENE>` (add `--release`, and `--title "..."` if the user wants a short description in the file names, for the release). It updates the `.srt` next to every copy of each video (with `*.srt.BACKUP-<date-time>` files), and lists the files changed. Report that list in `REVIEW.md` terms: counts in chat, details in the tool output. If some copies were skipped because the video size differs from the first copy, tell the user which files and ask whether to add the subtitles to those versions; on a yes, run again with `--include-different`.
+
+### Prepare the batch (when the user says so, e.g. "prepare the batch for subtitles")
+
+1. Run `python tools/publish_srt.py <SCENE> --release` for each scene of the batch (the scenes finalized and reviewed since the last release; ask if unsure which). Report skipped copies as above.
+2. Write two text files in the git-ignored `Release/` folder (the user pastes them in the forum, he drags the `.srt` / `.asig` files himself, so no file lines):
+   * `POST-TEXT.txt`: the static post text, the same for every scene (the process link and the "files to synchronize" link, from `publish.config.json` `ProcessUrl` / `SyncUrl`).
+   * `CHANGES-<yyyy-mm-dd>.txt`: the "new subtitles of the day" post: one bullet per scene of the batch, `* [<SCENE> - <actors> - <title>](TODO url), scripted by TODO **\[TODO script\]**.` The actors and the title come from the `## Scene name` section of the scene's `REVIEW.md` (`Actors:` / `Title:`), else from the video file name; otherwise I **suggest** a short meaningful title (marked `(suggested)`). The scripter name and the paid/free type are always left as TODO for the user.
 
 ## Audio clips for the review items (standing rule, user decision)
 

@@ -21,6 +21,7 @@ Read these before working on a scene:
 SubtitlesFinalizer/
 ├── AGENTS.md / CLAUDE.md / WORKFLOW.md / STYLE-GUIDE.md
 ├── tools/                                          helper scripts (see section 6)
+├── Release/                                        git-ignored: files prepared by tools/publish_srt.py --release (<scene>-<part>.srt/.asig) + POST-TEXT.txt and CHANGES-<date>.txt for the forum
 └── Scenes/
     └── <SCENE-ID>/                                 e.g. Scenes/HNVR-141/
         ├── <SCENE>-<P>.final-ai-debug.srt          INPUT  (read-only, source of truth)
@@ -28,7 +29,7 @@ SubtitlesFinalizer/
         ├── <SCENE>-<P>.WIP.srt                     WORK IN PROGRESS (the only file you edit), created by tools/create_working_srt.py
         │                                             from the two inputs above
         ├── <SCENE>-<P>.srt                         FINAL file (plain name), produced at the very end by tools/finalize_srt.py from the .WIP.srt
-        ├── REVIEW.md                               THE single channel with the user for the WHOLE scene (all its parts in one file): cues finalized with a doubt (R: notes of apply_cues, tagged with the part letter), clip tables (with a context for the transcriber), open questions with an `Answer:` line, scene-wide notes. In chat, only say "created/updated REVIEW.md" + counts (see WORKFLOW.md)
+        ├── REVIEW.md                               THE single channel with the user for the WHOLE scene (all its parts in one file): cues finalized with a doubt (R: notes of apply_cues, tagged with the part letter), clip tables (with a context for the transcriber), open questions with an `Answer:` line, scene-wide notes, a `## Scene name` section (`Actors:` / `Title:`, used for the release), `## Publish questions` (copies of a video not updated because its size differs). In chat, only say "created/updated REVIEW.md" + counts (see WORKFLOW.md)
         ├── GLOSSARY.md                             Scene glossary + character notes (created after the pilot batch, see WORKFLOW.md)
         └── <SCENE>-<P>.mp4                         Optional video, for the user only (git-ignored; never read it)
 ```
@@ -159,6 +160,8 @@ Keep the user informed in short plain updates. At the end of each wave, report: 
 * **`tools/lint_srt.py <file.WIP.srt> [...] [--min-severity warn] [--rule ID] [--summary] [--strict]`**: read-only style check of the finalized cues, driven by **`lint.config.json`** (repo root; the user can read and edit it: regex `rules` with severity/message/enabled, numeric `limits` for line length, lines, cps, orphan last word). Known false positives go in `<scene folder>/lint.ignore.txt` (`<rule-id> <HH:MM:SS>`). Run it before finalizing and fix or justify every `warn`/`error`; when a style rule is added to STYLE-GUIDE.md, add its pattern to `lint.config.json` too. `lint.config.json` also has `repeats` (a word used N times in the last M cues: `cum`, `boobs`, `cock`), reported as `info`.
 
 * **`tools/pair_cues.py <base>.WIP.srt [--debug FILE] [--from HH:MM:SS] [--to HH:MM:SS] [--cue-numbers]`**: read-only. Prints, for every finalized subtitle, `time | English | Japanese` where the Japanese is the VoiceText (or OnScreenText) of the debug cues it overlaps (priority: `[manual-input]`, `[singlevad-ai-refined]`, `[full-ai]`). Cues that still have metadata and the injected credits of a final `.srt` are skipped. It is the evidence to print in the conversation before asking the **advisor** (or a stronger model) for the final review of a scene (WORKFLOW.md, wave 3, step 2b).
+
+* **`tools/publish_srt.py <SCENE> [--dry-run] [--release] [--release-dir DIR] [--no-asig] [--title "..."] [--include-different]`**: the step after `finalize_srt.py`; **I run it, the user never does** (he asks me). It copies each final `.srt` next to **every copy** of the video found in the `VideoFolders` of `extract_audio[.private].config.json` (searched in order, recursively), after saving the old `.srt` as `<name>.srt.BACKUP-<date-time>` (never deleted; the user cleans them up by searching for `BACKUP`). It does it by default (no preview) and prints the list of files changed. **The first copy found is the reference: a copy whose size in bytes differs is not touched**; the tool prints it and writes it in `Scenes/<S>/REVIEW.md` under `## Publish questions`; I report them to the user ("files X, Y, Z were not processed because the video size differs, add the subtitles anyway?") and, only on his yes, run again with `--include-different`. `--release` also fills the git-ignored `Release/` folder (`<scene>-<part>.srt/.asig`, the `.asig` from the first copy, or `<scene>-<part> - <title>` with `--title` / `Scenes/<S>/RELEASE.json`); the forum text is made by me on request (WORKFLOW.md, "Prepare the batch"). Settings: `publish.config.json` (+ `publish.private.config.json`, git-ignored).
 
 ### Improving the tooling (the user is open to it)
 

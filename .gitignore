@@ -18,6 +18,9 @@ __pycache__/
 
 /Scenes/
 
+# Local staging folder of tools/publish_srt.py --release (copies of the final files + post text)
+/Release/
+
 
 # Machine-specific settings (never committed)
 *.private.config.json
