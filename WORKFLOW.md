@@ -2,7 +2,46 @@
 
 Applies to **each part** (`A`, `B`, `C`...) of a scene folder (`Scenes/<SCENE>/`) independently. See [AGENTS.md](AGENTS.md) for the file formats and golden rules, and [STYLE-GUIDE.md](STYLE-GUIDE.md) for the style.
 
+## The scene checklist (the backbone of this workflow)
+
+**Every scene has a `## Progress checklist` at the very top of its `Scenes/<S>/REVIEW.md`** (right after the title). It is the single place that says what is done and what is left. Rules:
+* **Create it at Step 0**, copied from the template below, with the first items ticked as they are done. Never start a scene without it.
+* **Update it as you go**: tick `[x]` an item the moment it is done (same edit as the work, no batching at the end). Add scene-specific sub-items under a step when needed (e.g. one line per part, one line per open question batch). Items that depend on the user stay unticked until the user acts.
+* **The steps below are the detail of each checklist item**; when starting a new session on a scene, read the checklist first to know where to resume.
+* A skipped step is not silently ticked: write `[x] ... (skipped: reason)` or `(none raised)`.
+
+Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g. `[x] Wave 1 part A / [ ] Wave 1 part B`):
+
+```markdown
+## Progress checklist
+
+- [ ] Setup
+  - [ ] `.parts-duration.txt` (from the `.wipsubtitles` / the user's clipboard text; if the user supplies nothing, check whether it already exists in the scene folder: for some scenes it is already there, then tick this item as "already present")
+  - [ ] WIP files created (`create_working_srt.py`); TERRAIN-MAP present or "no terrain" noted
+  - [ ] Scene context read (`OngoingContext` / speakers); asked the user if missing
+- [ ] Pilot batch (first ~40 cues) + report: sample, character understanding
+  - [ ] Tone confirmed by the user
+  - [ ] `GLOSSARY.md` created
+  - [ ] Corrections applied to the pilot cues
+- [ ] Wave 1: all easy cues finalized (per part)
+- [ ] Wave 2: questions
+  - [ ] Clips extracted for the unchecked items, table + context for the transcriber
+  - [ ] User's answers applied
+- [ ] Scene name (`## Scene name`: Actors in western order, Title) confirmed by the user
+- [ ] Wave 3: polish
+  - [ ] Re-read as a viewer (names, terms, repeats)
+  - [ ] `lint_srt.py` clean (fixed, or justified in `lint.ignore.txt`)
+  - [ ] Final review: `pair_cues.py` printed, advisor called, proposals in REVIEW.md
+  - [ ] User ticked the proposals, applied (`@!`), lint rerun
+- [ ] `finalize_srt.py` (`--extend-ms 0` if the timings were already expanded)
+- [ ] `publish_srt.py` (skipped copies reported / `--include-different` answered)
+- [ ] Release batch (`--release`, POST-TEXT, CHANGES): only when the user asks
+- [ ] Commit of `Scenes/` (only when the user asks; never `git add`)
+```
+
 ## Step 0 - Setup (once per part)
+
+0. Create (or open) `Scenes/<SCENE>/REVIEW.md` with the checklist above.
 
 1. Check the inputs exist: `<S>-<P>.final-ai-debug.srt` (required: if it is missing, tell the user and stop) and `<S>-<P>.Worker.manual-input-preparer.TERRAIN-MAP.srt` (**optional**: if it is missing, the tool assumes no silence anywhere, i.e. `{Silences:none}` on every cue; say so in your first report and remember that every split then needs the user's confirmation).
 2. If `<S>-<P>.WIP.srt` does **not** exist, create it: `python tools/create_working_srt.py Scenes/<SCENE>` (a copy of the debug file where every cue also has its `[terrain] {Silences:...}` line). If it exists, continue from it (don't overwrite; the tool refuses to anyway).
@@ -65,7 +104,7 @@ For each cue still holding a metadata block, in order:
 
 ### Scene name (decided while working on the scene)
 
-Each scene's `REVIEW.md` has a section `## Scene name` with two lines, `Actors: ...` and `Title: ...` (a short, meaningful, recognizable title; the video file name's title when it has one). During the pilot or wave 2, I **suggest** the name there (marked `(suggested)`) and the user confirms or edits it; it is used for the release (`publish_srt.py` file names with a title, and the CHANGES file of "Prepare the batch"). The scripter and paid/free are not part of it (always TODO for the user).
+Each scene's `REVIEW.md` has a section `## Scene name` with two lines, `Actors: ...` and `Title: ...` (a short, meaningful, recognizable title; the video file name's title when it has one). **Actor names are written in western order: given name first, family name last** (Japanese order is family name first). Check what the actress says about herself: if she introduces herself by her given name (e.g. "I'm Mitsuki"), that is the given name, so `Mitsuki Nagisa` (not `Nagisa Mitsuki`). The video file name may use the other order or a different romanization: the scene name in `REVIEW.md` wins; don't rename files on my own. During the pilot or wave 2, I **suggest** the name there (marked `(suggested)`) and the user confirms or edits it (then drop the marker and tick the checklist item); it is used for the release (`publish_srt.py` file names with a title, and the CHANGES file of "Prepare the batch"). The scripter and paid/free are not part of it (always TODO for the user).
 
 ## Wave 3 - Polish and finish
 

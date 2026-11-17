@@ -119,7 +119,11 @@ def find_all_videos(folders, video_name, scene, part):
     """ALL the copies of the video, in the search order of VideoFolders (each folder searched recursively, listed once).
     A copy = the file named video_name, or an .mp4 starting with '<scene>-<part>' + space/dash/dot (renamed video)."""
     wanted = video_name.lower()
-    prefix = ("%s-%s" % (scene, part)).lower()
+    prefixes = {("%s-%s" % (scene, part)).lower()}
+    # the folder name may differ from the video's id (3DSVR-647 vs 3DSVR-0647): also use the id taken from the file name
+    m = re.match(r"^(\S*?\d+[ -]%s)(?=[ .\[]|$)" % re.escape(part), video_name)
+    if m:
+        prefixes.add(m.group(1).lower())
     out, seen = [], set()
     for root in folders:
         root = root.strip().strip('"')
@@ -129,7 +133,7 @@ def find_all_videos(folders, video_name, scene, part):
             _INDEX[root] = [os.path.join(d, n) for d, _s, fs in os.walk(root) for n in fs if n.lower().endswith(".mp4")]
         for path in _INDEX[root]:
             low = os.path.basename(path).lower()
-            ok = low == wanted or (low.startswith(prefix) and low[len(prefix):len(prefix) + 1] in (" ", "-", "."))
+            ok = low == wanted or any(low.startswith(pf) and low[len(pf):len(pf) + 1] in (" ", "-", ".") for pf in prefixes)
             key = os.path.normcase(os.path.abspath(path))
             if ok and key not in seen:
                 seen.add(key)
