@@ -17,6 +17,7 @@ Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g.
 
 - [ ] Setup
   - [ ] `.parts-duration.txt` (from the `.wipsubtitles` / the user's clipboard text; if the user supplies nothing, check whether it already exists in the scene folder: for some scenes it is already there, then tick this item as "already present")
+  - [ ] `<S>.wipsubtitles.zip` present in the scene folder (the user zips the `.wipsubtitles` file(s) after the `.parts-duration.txt` is made from them: remind the user if only the raw `.wipsubtitles` is there; re-check before the commit of `Scenes/`)
   - [ ] WIP files created (`create_working_srt.py`); TERRAIN-MAP present or "no terrain" noted
   - [ ] Scene context read (`OngoingContext` / speakers); asked the user if missing
 - [ ] Pilot batch (first ~40 cues) + report: sample, character understanding
@@ -36,7 +37,7 @@ Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g.
 - [ ] `finalize_srt.py` (`--extend-ms 0` if the timings were already expanded)
 - [ ] `publish_srt.py` (skipped copies reported / `--include-different` answered)
 - [ ] Release batch (`--release`, POST-TEXT, CHANGES): only when the user asks
-- [ ] Commit of `Scenes/` (only when the user asks; never `git add`)
+- [ ] Commit of `Scenes/` (only when the user asks; never `git add`; check first that the scene has its `.wipsubtitles.zip`)
 ```
 
 ## Step 0 - Setup (once per part)
