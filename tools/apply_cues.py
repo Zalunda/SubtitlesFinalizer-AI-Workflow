@@ -18,6 +18,7 @@ cue(s) by the START TIME of their timing line (HH:MM:SS,mmm):
     Congrats.
 
     @00:00:20,050+00:00:23,783           MERGE: several back-to-back cues (consecutive in the file) become one cue
+                                         (a start time shared by 2 cues is written twice: @00:09:09,100+00:09:09,100)
     Alright, let's get this off you.     from the first start to the last end (or give an explicit timing line)
 
     @00:00:40,112                        QUESTION: the cue keeps its metadata block and gets
@@ -29,6 +30,10 @@ cue(s) by the START TIME of their timing line (HH:MM:SS,mmm):
 
     R: Not sure about "X": check the audio.   (added to ANY finalize/split/merge block: the cue is finalized as usual and
                                               a line '- [ ] <part> HH:MM:SS | text | doubt' is appended to REVIEW.md of the scene folder for the user's audio check)
+
+    @^00:09:06,000                       INSERT: a NEW cue where none exists (a voice nobody had a cue for). The block has
+    00:09:06,000 --> 00:09:07,200        exactly one timing line (its start is the one on the '@^' line) and the text.
+    Just me...                           The cue goes after the cues that start before it; it may overlap a neighbour.
 
     @!00:00:20,050                       REDO: '@!' lets a decision replace a cue that is ALREADY finalized (no metadata)
     Okay, taking it off.                 (same text/split/merge rules; use it for later corrections)
@@ -100,12 +105,13 @@ def parse_decisions(text):
         if line.startswith("@"):
             keys = []
             redo = line[1:].startswith("!")
-            for part in line[1:].lstrip("!").split("+"):
+            insert = line[1:].startswith("^")
+            for part in line[1:].lstrip("!^").split("+"):
                 k = START_KEY.match(part.strip())
                 if not k:
                     raise ValueError("line %d: bad cue start time %r" % (lineno, part))
                 keys.append(to_ms(*k.groups()))
-            cur = {"keys": keys, "pieces": [], "plain": [], "q": None, "s": None, "line": lineno, "redo": redo, "r": [], "delete": False}
+            cur = {"keys": keys, "pieces": [], "plain": [], "q": None, "s": None, "line": lineno, "redo": redo, "r": [], "delete": False, "insert": insert}
             decisions.append(cur)
             continue
         if cur is None:
@@ -170,18 +176,50 @@ def main():
 
     errors, warnings = [], []
     replace = {}   # cue index -> replacement string (or "" to drop)
-    counts = {"finalized": 0, "split": 0, "merged": 0, "questions": 0, "deleted": 0}
+    counts = {"finalized": 0, "split": 0, "merged": 0, "questions": 0, "deleted": 0, "inserted": 0}
+    inserts = {}   # cue index j -> text to write just before cue j
     reviews = []   # (start ms, final text lines, notes) for the cues decided with R: lines
 
     for d in decisions:
         where = "@%s (line %d of the decisions)" % ("+".join(fmt(k) for k in d["keys"]), d["line"])
+        if d["insert"]:
+            if len(d["keys"]) != 1 or len(d["pieces"]) != 1 or d["plain"] or d["q"] is not None or d["delete"] or d["redo"]:
+                errors.append("%s: an insert (@^) needs one start time, one timing line and the text (nothing else)" % where)
+                continue
+            s, e, lines = d["pieces"][0]
+            if s != d["keys"][0]:
+                errors.append("%s: the timing line must start at %s" % (where, fmt(d["keys"][0])))
+                continue
+            if not lines or e <= s:
+                errors.append("%s: an insert needs text and an end after its start" % where)
+                continue
+            if by_start.get(s):
+                errors.append("%s: a cue already starts at %s (use '@!' to redo it)" % (where, fmt(s)))
+                continue
+            j = len([c for c in cues if c["start"] <= s])
+            if j == 0 or j >= len(cues):
+                errors.append("%s: an insert must lie between two existing cues" % where)
+                continue
+            if j in inserts:
+                errors.append("%s: two inserts at the same place; do them in two runs" % where)
+                continue
+            check_text(lines, s, e, where, warnings)
+            tmpl = dict(cues[j - 1])
+            tmpl["bom"] = ""
+            inserts[j] = build_cue(tmpl, s, e, lines, tmpl["trailing"])
+            if d["r"]:
+                reviews.append((s, lines, d["r"]))
+            counts["inserted"] += 1
+            continue
         idxs = []
         for k in d["keys"]:
             found = by_start.get(k, [])
-            if len(found) != 1:
+            # several cues may share a start time: a key repeated in a merge (A+A) takes them in file order
+            nb_asked = d["keys"].count(k)
+            if len(found) != nb_asked:
                 errors.append("%s: %d cues start at %s" % (where, len(found), fmt(k)))
             else:
-                idxs.append(found[0])
+                idxs.append(found[d["keys"][:len(idxs)].count(k)])
         if len(idxs) != len(d["keys"]):
             continue
         if any(i in replace for i in idxs):
@@ -287,6 +325,10 @@ def main():
     pieces_out = []
     pos = 0
     for i, c in enumerate(cues):
+        if i in inserts:
+            pieces_out.append(text[pos:c["begin"]])
+            pieces_out.append(inserts[i])
+            pos = c["begin"]
         if i in replace:
             pieces_out.append(text[pos:c["begin"]])
             pieces_out.append(replace[i])
@@ -294,7 +336,7 @@ def main():
     pieces_out.append(text[pos:])
     result = "".join(pieces_out)
 
-    summary = "%d finalized, %d split, %d merged, %d questions added, %d deleted" % (counts["finalized"], counts["split"], counts["merged"], counts["questions"], counts["deleted"])
+    summary = "%d finalized, %d split, %d merged, %d questions added, %d deleted, %d inserted" % (counts["finalized"], counts["split"], counts["merged"], counts["questions"], counts["deleted"], counts["inserted"])
     if args.dry_run:
         print("dry run OK: " + summary)
         return 0

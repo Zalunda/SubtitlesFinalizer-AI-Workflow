@@ -35,7 +35,7 @@ Config file (JSON, same shape as the FunscriptToolbox output rule). Looked up in
                   file <folder>/.parts-duration.txt (or '<SCENE>-.parts-duration.txt', the only '*.parts-duration.txt' of the folder), one line per part:   HNVR-141-A.mp4 00:29:40.970
                   (an Origin "End" injection without that file/line is an ERROR, nothing is written).
   InjectInAllFiles: true = in every part (A, B, C...) of the scene; false = only in the first part for "Start",
-                  only in the last part for "End" (the parts are the *-<LETTER>.WIP.srt files of the same folder).
+                  only in the last part for "End" (the parts are the sibling .WIP.srt files of the same folder: part token A, D, R1, 2... right after the scene id).
   Times are C# TimeSpan strings: [-][d.]hh:mm:ss[.fff].
 
 Files: the WIP file is never modified, so running the tool twice can't add the time twice; the plain <base>.srt is
@@ -123,16 +123,22 @@ def read_parts_durations(folder):
     return result
 
 
+# A part token is 1-3 capital letters / digits ('A', 'D', 'R1', '2'), written right after the scene id and followed by
+# either '.WIP.srt' or ' - <title>': 'HNVR-141-A.WIP.srt', 'PPVR-020-A - Mei Satsuki [x].WIP.srt', 'VRKM-0809-R1 - ... .WIP.srt'.
+PART_RE = re.compile(r"^(.*?)-([A-Z0-9]{1,3})(?: - .*)?\.WIP\.srt$")
+
+
 def part_position(srt_path):
-    """('first'|'last'|'middle'|'only', letter) of this part among the *-<LETTER>.WIP.srt files of its folder."""
+    """('first'|'last'|'middle'|'only', part) of this part among the sibling .WIP.srt files of its folder (same scene prefix)."""
     name = os.path.basename(srt_path)
-    m = re.match(r"^(.*)-([A-Z])\.WIP\.srt$", name)
+    m = PART_RE.match(name)
     if not m:
         return "only", None
     prefix, letter = m.group(1), m.group(2)
     letters = sorted(
-        mm.group(1) for f in os.listdir(os.path.dirname(os.path.abspath(srt_path)) or ".")
-        for mm in [re.match(r"^" + re.escape(prefix) + r"-([A-Z])\.WIP\.srt$", f)] if mm)
+        {mm.group(2) for f in os.listdir(os.path.dirname(os.path.abspath(srt_path)) or ".")
+         for mm in [PART_RE.match(f)] if mm and mm.group(1) == prefix},
+        key=lambda s: (len(s), s))
     if len(letters) <= 1:
         return "only", letter
     pos = "middle"
