@@ -34,8 +34,7 @@ Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g.
   - [ ] `lint_srt.py` clean (fixed, or justified in `lint.ignore.txt`)
   - [ ] Final review: `pair_cues.py` printed, advisor called, proposals in REVIEW.md
   - [ ] User ticked the proposals, applied (`@!`), lint rerun
-- [ ] `finalize_srt.py` (`--extend-ms 0` if the timings were already expanded)
-- [ ] `publish_srt.py` (skipped copies reported / `--include-different` answered)
+- [ ] Finalize = `finalize_srt.py` + `publish_srt.py`, always together, on the user's go (`--extend-ms 0` if the timings were already expanded; skipped copies reported / `--include-different` answered)
 - [ ] Release batch (`--release`, POST-TEXT, CHANGES): only when the user asks
 - [ ] Commit of `Scenes/` (only when the user asks; never `git add`; check first that the scene has its `.wipsubtitles.zip`)
 ```
@@ -113,10 +112,10 @@ Each scene's `REVIEW.md` has a section `## Scene name` with two lines, `Actors: 
 2. Run `python tools/lint_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt --min-severity warn` and fix every finding (or add the false positives to `Scenes/<SCENE>/lint.ignore.txt`). Check: no `------- Metadatas -------` left; no overlapping cues; every cue has valid timing; reading speed outliers (flag/fix); each part ends cleanly.
 2b. **Final review by a stronger reviewer (user rule, before `finalize_srt.py`)**: once the lint is clean and every doubt of `REVIEW.md` is resolved, ask the **advisor** (the `advisor` tool, when the session has it; otherwise switch the session to a stronger model, e.g. `/model opus`, as was done on SIVR-108) for a review of the whole scene. The reviewer only sees the conversation, so **first print in the conversation, for every final cue, the English subtitle next to the Japanese of the debug cues it overlaps** (one line per cue: `time | English | Japanese`, produced by `python tools/pair_cues.py <base>.WIP.srt [--from HH:MM:SS --to HH:MM:SS]`; print it in chunks of a few hundred lines). What to look for: meaning errors vs the Japanese, lines that repeat the same word or structure too often (`came`, `Welcome`, `Not yet`...), callbacks to the scene's premise or rules (`not allowed`, a secret, a running joke), fragments left by a merge/split or by a removed laugh, unnatural word order, denial protocol / `だめ` rendering, consistency with the glossary. Put the proposals in `Scenes/<S>/REVIEW.md` under `Suggested improvements` (one line per proposal: cue time, current -> proposed, reason; `- [ ]`), **don't apply them on my own**: the user ticks / edits the ones to keep, then apply them in the WIP (`@!`) and regenerate the final files.
 3. **Do NOT renumber or convert the WIP file** (the user diffs it while you work: renumbering makes the diff unreadable). The numbering and the Windows CRLF line endings are produced at the end by `tools/finalize_srt.py` in the final file.
-4. When the user says the subtitles are final: `python tools/finalize_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt` (adds 0.3 s to every end, minimum 1 s, limited by the next start; writes the final plain `<S>-<P>.srt`; the WIP file is kept). Run it once, last.
+4. When the user says the subtitles are final ("finalize"): **`finalize_srt.py` and `publish_srt.py` always run together**. Ask for the go first, since the publish changes the user's real folders. `python tools/finalize_srt.py Scenes/<SCENE>/<S>-<P>.WIP.srt` (adds 0.3 s to every end, minimum 1 s, limited by the next start; writes the final plain `<S>-<P>.srt`; the WIP file is kept). Run it once, last.
 5. Report a final summary (cues finalized / split / merged / questions resolved) and anything you want the user to double-check.
 
-## Publishing the final files (after wave 3, when the user asks)
+## Publishing the final files (right after `finalize_srt.py`, in the same go)
 
 Run `python tools/publish_srt.py <SCENE>` (add `--release`, and `--title "..."` if the user wants a short description in the file names, for the release). It updates the `.srt` next to every copy of each video (with `*.srt.BACKUP-<date-time>` files), and lists the files changed. Report that list in `REVIEW.md` terms: counts in chat, details in the tool output. If some copies were skipped because the video size differs from the first copy, tell the user which files and ask whether to add the subtitles to those versions; on a yes, run again with `--include-different`.
 
