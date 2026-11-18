@@ -24,8 +24,10 @@ Scenes/
     ├── ABC-123-A.final-ai-debug.srt                REQUIRED: subtitles + metadata (see below)
     ├── ABC-123-A.Worker.manual-input-preparer.TERRAIN-MAP.srt     OPTIONAL: where there is sound / silence
     ├── ABC-123-A.mp4                               OPTIONAL: the video (only for you; the assistant never reads it)
-    └── ABC-123.parts-duration.txt                  needed only by finalize_srt.py (end credits); named .parts-duration.txt or
-                                                    <scene>.parts-duration.txt (only one per folder), one line per part:
+    ├── ABC-123-A.wipsubtitles                      REQUIRED: the toolbox project file; the assistant extracts the
+                                                    .parts-duration.txt from it, then zips it as ABC-123.wipsubtitles.zip
+    └── ABC-123.parts-duration.txt                  made by the assistant from the .wipsubtitles; needed only by
+                                                    finalize_srt.py (end credits); only one per folder, one line per part:
                                                     ABC-123-A.mp4 00:29:40.970
 ```
 

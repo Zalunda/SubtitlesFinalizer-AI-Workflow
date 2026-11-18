@@ -24,3 +24,6 @@ __pycache__/
 
 # Machine-specific settings (never committed)
 *.private.config.json
+
+# Local third-party tools (7-Zip, ...), not committed
+/externalTools/
