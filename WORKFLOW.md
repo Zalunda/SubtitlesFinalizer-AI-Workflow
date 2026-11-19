@@ -17,7 +17,7 @@ Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g.
 
 - [ ] Setup
   - [ ] `<clean name>.parts-duration.txt` (I always extract it myself from the `.wipsubtitles` file: `TimelineMap.Segments`, one line `<Filename> <Duration>` per part, durations rounded to the ms, CRLF; if the raw `.wipsubtitles` is already zipped, read it from the `.wipsubtitles.zip`)
-  - [ ] `<clean name>.wipsubtitles.zip` present in the scene folder, made right after the `.parts-duration.txt` (I make it myself with the git-ignored `externalTools/7z/x64/7za.exe`: `7za a -tzip "<clean name>.wipsubtitles.zip" "<file>.wipsubtitles"`, then `7za t` to test it and check it lists the file, then **delete the raw `.wipsubtitles`** (user rule); `<clean name>` = the cleanest scene name, used for the `.wipsubtitles.zip`, the `.cost.txt` and the `.parts-duration.txt` of the folder: the JAV code only (`KIWVR-220`, no part letter, no actress/title), or for a western scene the video name without `[flat]` / ` [zalunda]...`; re-check before the commit of `Scenes/`)
+  - [ ] `<clean name>.wipsubtitles.zip` present in the scene folder, made right after the `.parts-duration.txt` (I make it myself with the git-ignored `externalTools/7z/x64/7za.exe`: `7za a -tzip "<clean name>.wipsubtitles.zip" "<file>.wipsubtitles"`, then `7za t` to test it and check it lists the file, then **delete the raw `.wipsubtitles`** (user rule); `<clean name>` = the cleanest scene name, used for the `.wipsubtitles.zip`, the `.cost.txt` and the `.parts-duration.txt` of the folder: the JAV code only (`KIWVR-220`, no part letter, no actress/title), or for a western scene the video name without `[flat]` / ` [zalunda]...`; checked again each time a commit of `Scenes/` is prepared, see AGENTS.md section 3)
   - [ ] WIP files created (`create_working_srt.py`); TERRAIN-MAP present or "no terrain" noted
   - [ ] Scene context read (`OngoingContext` / speakers); asked the user if missing
 - [ ] Pilot batch (first ~40 cues) + report: sample, character understanding
@@ -36,8 +36,9 @@ Template (parts = `A`, `B`... or `-2`, `-3`; tick per part when it matters, e.g.
   - [ ] User ticked the proposals, applied (`@!`), lint rerun
 - [ ] Finalize = `finalize_srt.py` + `publish_srt.py`, always together, on the user's go (`--extend-ms 0` if the timings were already expanded; skipped copies reported / `--include-different` answered)
 - [ ] Release batch (`--release`, POST-TEXT, CHANGES): only when the user asks
-- [ ] Commit of `Scenes/` (only when the user asks; never `git add`; check first that the scene has its `.wipsubtitles.zip`)
 ```
+
+(No checklist item for the commit: a tick can't be recorded in the commit it is about. The commit checks, including the `.wipsubtitles.zip`, are in AGENTS.md section 3, "Git".)
 
 ## Step 0 - Setup (once per part)
 

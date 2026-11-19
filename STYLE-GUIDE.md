@@ -96,6 +96,8 @@ Use the dash format, each speaker on their own line:
 ```
 Only when both lines are short and back to back (gap <= ~0.5 s, total <= ~4 s, each line <= 42 characters **including the `- `**); otherwise use two cues. The toolbox conformer (which builds these dash cues automatically) is **not** run when finalizing with the assistant, so the assistant writes the `- ` itself: give the merge decision as `@<start1>+<start2>` with the two dash lines as text. Order = order of speech. Both lines get a dash, even when one is very short.
 
+**Never let two cues overlap in time (user rule, 3DSVR-1072):** the user's player may hide the first subtitle when the second starts. When two speakers talk **at the same time** (e.g. a girl whispering over a PA announcement), they share the same audio: make **one dash cue** covering both, whatever the length of each line (shorten the less important line to fit 2 lines). A new cue inserted with `@^` must never overlap a neighbour; `renumber_srt.py --dry-run` and `finalize_srt.py` report overlaps: fix every one before finalizing.
+
 ## 7. Don't-lose-info checklist (before finalizing a cue)
 
 * Does it say what the Japanese says (meaning, who it addresses, question vs statement)?
