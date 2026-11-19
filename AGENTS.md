@@ -21,8 +21,9 @@ Read these before working on a scene:
 SubtitlesFinalizer/
 ├── AGENTS.md / CLAUDE.md / WORKFLOW.md / STYLE-GUIDE.md
 ├── tools/                                          helper scripts (see section 6)
-├── Release/                                        git-ignored: files prepared by tools/publish_srt.py --release (<scene>-<part>.srt/.asig) + POST-TEXT.txt and CHANGES-<date>.txt for the forum
+├── Release/                                        git-ignored: files prepared by tools/publish_srt.py --release in one folder per batch, Release/<date>/ (<scene>-<part>.srt/.asig + CHANGES-<date>.txt for the forum, which includes the text of Release/POST-TEXT.txt)
 └── Scenes/
+    ├── --RELEASED/<date>/<SCENE-ID>/              scenes already released, moved there by batch (WORKFLOW.md, "Prepare the batch")
     └── <SCENE-ID>/                                 e.g. Scenes/HNVR-141/
         ├── <SCENE>-<P>.final-ai-debug.srt          INPUT  (read-only, source of truth)
         ├── <SCENE>-<P>.Worker.manual-input-preparer.TERRAIN-MAP.srt   INPUT (read-only audio terrain, see 2.2). OPTIONAL: without it, no silence is assumed anywhere

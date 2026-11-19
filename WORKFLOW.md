@@ -121,10 +121,17 @@ Run `python tools/publish_srt.py <SCENE>` (add `--release`, and `--title "..."` 
 
 ### Prepare the batch (when the user says so, e.g. "prepare the batch for subtitles")
 
-1. Run `python tools/publish_srt.py <SCENE> --release` for each scene of the batch (the scenes finalized and reviewed since the last release; ask if unsure which). Report skipped copies as above.
-2. Write two text files in the git-ignored `Release/` folder (the user pastes them in the forum, he drags the `.srt` / `.asig` files himself, so no file lines):
-   * `POST-TEXT.txt`: the static post text, the same for every scene (the process link and the "files to synchronize" link, from `publish.config.json` `ProcessUrl` / `SyncUrl`).
-   * `CHANGES-<yyyy-mm-dd>.txt`: the "new subtitles of the day" post: one bullet per scene of the batch, `* [<SCENE> - <actors> - <title>](TODO url), scripted by TODO **\[TODO script\]**.` The actors and the title come from the `## Scene name` section of the scene's `REVIEW.md` (`Actors:` / `Title:`), else from the video file name; otherwise I **suggest** a short meaningful title (marked `(suggested)`). The scripter name and the paid/free type are always left as TODO for the user.
+The batch = the scenes at the root of `Scenes/` (not in `--RELEASED/`), minus the ones the user names as not ready. `<date>` = today, `yyyy-mm-dd`.
+
+0. **Readiness check** (report before changing anything): every part has its final `.srt`, no metadata left in the WIP, the WIP not newer than the final file, `.wipsubtitles.zip` + `.parts-duration.txt` present, a `## Scene name` section (`Actors:` / `Title:`), and the unchecked `REVIEW.md` items listed per scene. The user decides on the gaps (e.g. "check everything").
+1. **Missing `.asig`**: `publish_srt.py` prints `NO .asig` for the video copies without one, and `no .asig, signature in the .funscript: not needed` when the `.funscript` next to the video already has an `"audioSignature"` (a scene scripted by the user: no `.asig` needed, user decision, batch 2026-11-18). Just report those in the output; for the real `NO .asig` ones, **ask the user first**. When one is wanted, generate it next to the video with `externalTools/FunscriptToolbox/FunscriptToolbox.exe as.cas "<video>.mp4"` (several files or `*.mp4` accepted; slow, run it in the background), before the release run. The tool skips by itself a video whose `.funscript` already contains the signature ("Skipping because ... already contains").
+2. Run `python tools/publish_srt.py <SCENE> --release --release-dir Release/<date>` for each scene of the batch. File names: `<scene>-<part>.srt/.asig` (part tokens `A`, `A-B`, `2`, `R1`, `[D]`), or `<scene>.srt` for a single file with no part token. Report skipped copies as above, and the parts with no video found (no `.asig` for them).
+3. Write **one** text file, `Release/<date>/CHANGES-<date>.txt` (the user pastes it in the forum; he drags the `.srt` / `.asig` files himself, so no file lines). It holds:
+   * the static post text, copied from `Release/POST-TEXT.txt` (the process link and the "files to synchronize" link, `publish.config.json` `ProcessUrl` / `SyncUrl`);
+   * the "new subtitles of the day" list: one bullet per scene, `* [<SCENE> - <actors> - <title>](TODO url), scripted by TODO **\[TODO script\]**.` (western scene: `<Studio> - <actors> - <title>`). The actors and the title come from the `## Scene name` section of the scene's `REVIEW.md`, else from the video file name; otherwise I **suggest** a short meaningful title (marked `(suggested)`). The scripter name and the paid/free type are always left as TODO for the user.
+4. Tick the `Release batch` item of each scene's checklist.
+5. **Move the released scenes** to `Scenes/--RELEASED/<date>/` (plain move; the user stages it). Only after step 2: `publish_srt.py` looks for the scene at the root of `Scenes/`.
+6. Commit of `Scenes/` (and of the root repo if the tools changed): only when the user asks, with the usual process.
 
 ## Audio clips for the review items (standing rule, user decision)
 

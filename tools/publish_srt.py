@@ -45,12 +45,29 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 TIMING = re.compile(r"\d\d:\d\d:\d\d[,.]\d\d\d\s*-->\s*\d\d:\d\d:\d\d[,.]\d\d\d")
 PART_RE = re.compile(r"^\S*?\d+[ -]([A-Z](?:-[A-Z])?)(?=[ .\[]|$)")
+PART_NUM_RE = re.compile(r"^\S*?\d+-([A-Z]?\d{1,2})(?=[ .\[]|$)")   # MNSVR-001-2, VRKM-0809-R1
+PART_BRACKET_RE = re.compile(r"\[([A-Z])\]")                   # SSIS-698 - ... [D]
+
+
+def funscript_has_signature(video_base):
+    """True when '<video>.funscript' already holds the audio signature (then no .asig is needed)."""
+    fs = video_base + ".funscript"
+    if not os.path.isfile(fs):
+        return False
+    with open(fs, "r", encoding="utf-8-sig", errors="replace") as f:
+        return '"audioSignature"' in f.read()
+
+
+def release_part(name):
+    """Part token for the release file name ('A', 'A-B', '2', 'D'), or None for a single file with no part."""
+    m = PART_RE.match(name) or PART_NUM_RE.match(name) or PART_BRACKET_RE.search(name)
+    return m.group(1) if m else None
 DEFAULTS = {
     "ReleaseFolder": "Release",   # relative = inside the repo (git-ignored); the user copies from there to the web-site folder
     "ReleaseNameNoTitle": "{scene}-{part}",
     "ReleaseNameWithTitle": "{scene}-{part} - {title}",
     "BackupTag": "BACKUP",
-    "ProcessUrl": "https://discuss.eroscripts.com/t/how-to-create-subtitles-for-a-scene-2025/279450",
+    "ProcessUrl": "https://discuss.eroscripts.com/t/how-to-create-subtitles-for-a-scene-2026/346926",
     "SyncUrl": "https://discuss.eroscripts.com/t/vrnoobies-jav-scripts-on-slr/180121/2",
     "ScriptType": "paid",
 }
@@ -251,7 +268,9 @@ def main():
             real = base_v + ".srt"
             asig = base_v + ".asig"
             asig = asig if os.path.isfile(asig) else None
-            print("   [%d] video: %s  (%s)" % (i, video, "asig " + kb(asig) if asig else "NO .asig"))
+            print("   [%d] video: %s  (%s)" % (i, video, "asig " + kb(asig) if asig
+                                              else "no .asig, signature in the .funscript: not needed" if funscript_has_signature(base_v)
+                                              else "NO .asig"))
             if not os.path.isfile(real):
                 print("       real .srt: none yet -> would be created")
             elif sha(real) == sha(final):
@@ -323,12 +342,18 @@ def main():
         for part, final, entries in parts:
             asig = entries[0][2] if entries else None   # the first copy in search order
             pattern = pcfg["ReleaseNameWithTitle"] if args.title else pcfg["ReleaseNameNoTitle"]
-            rname = safe_name(pattern.format(scene=scene, part=part, title=args.title or "", actors=actors))
+            rpart = release_part(os.path.basename(final)[: -len(".srt")])
+            if rpart is None:   # a single file with no part token: "<scene>.srt", not "<scene>-<whole file name>.srt"
+                pattern = pattern.replace("-{part}", "")
+            rname = safe_name(pattern.format(scene=scene, part=rpart or "", title=args.title or "", actors=actors))
             print("  part %s -> %s.srt" % (part, rname))
             dst = os.path.join(rdir, rname + ".srt")
             backup_then_copy(final, dst, pcfg["BackupTag"], apply_it, print)
             if not asig and not args.no_asig:
-                print("  part %s: WARNING no .asig found" % part)
+                if entries and funscript_has_signature(os.path.splitext(entries[0][0])[0]):
+                    print("  part %s: no .asig, but the .funscript has the audio signature: no .asig needed" % part)
+                else:
+                    print("  part %s: WARNING no .asig found" % part)
             if asig and not args.no_asig:
                 print("  part %s -> %s.asig" % (part, rname))
                 backup_then_copy(asig, os.path.join(rdir, rname + ".asig"), pcfg["BackupTag"], apply_it, print)
