@@ -119,6 +119,8 @@
     { "id": "four-dots", "severity": "warn", "pattern": "\\.{4,}",
       "message": "four or more dots: use '...'" },
     { "id": "lowercase-i", "severity": "warn", "pattern": "\\bi\\b", "flags": "",
-      "message": "lowercase 'i': use 'I'" }
+      "message": "lowercase 'i': use 'I'" },
+    { "id": "no-end-mark", "severity": "error", "pattern": "[A-Za-z0-9]\\s*\\Z",
+      "message": "the cue ends on a word with no punctuation (bare 'But', 'Then', '..., but'): every cue ends with . ? ! , ... or -- (STYLE-GUIDE section 3, sentence split over two cues; user rule PPVR-020 + BIBIVR-091)" }
   ]
 }

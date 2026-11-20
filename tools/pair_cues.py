@@ -6,6 +6,7 @@ stronger model) for the final review of a scene (WORKFLOW.md, wave 3, step 2b): 
 
 Usage:
     python tools/pair_cues.py <base>.WIP.srt [--debug FILE] [--from HH:MM:SS] [--to HH:MM:SS] [--cue-numbers]
+                              [--visual | --visual-all] [--visual-chars N]
 
 Output, one line per finalized subtitle (cues that still have their metadata block, and the injected credits of a final
 .srt, are skipped):
@@ -14,6 +15,13 @@ Output, one line per finalized subtitle (cues that still have their metadata blo
 The debug file is <base>.final-ai-debug.srt next to the .srt unless --debug is given. The Japanese is, by priority, the
 [manual-input] VoiceText, the [singlevad-ai-refined] VoiceText, the [full-ai] VoiceText, then the OnScreenText (captions).
 A cue that is the result of a merge/split shows all the Japanese it overlaps, in time order.
+
+--visual adds, under the cues where the picture matters, a line
+        VIS: <visual description from the TranslationAnalysis of the overlapping debug cue(s)>
+(the `Gap Summary` and the `Vector/State/Cadence` prefix are removed, cut to --visual-chars, default 220). "Where the
+picture matters" = the Japanese points at something (これ/ここ/こっち/こう/こんな/それ/そこ/あれ/この/こちら/その) or
+the English is 3 words or fewer. --visual-all adds the line under every cue (much longer: print it in chunks).
+The description is an AI reading of the picture, a hint for the reviewer, not ground truth.
 
 Only the Python standard library is needed.
 """
@@ -32,6 +40,9 @@ KEYS = [
     r"\[full-ai\] \{VoiceText:(.*?)\}",
     r"\[singlevad-ai-refined\] \{OnScreenText:(.*?)\}",
 ]
+ANALYSIS = re.compile(r"\[singlevad-ai-refined\] \{TranslationAnalysis:(.*?)\}\s*(?:\n\[|$)", re.S)
+DEICTIC = re.compile(r"これ|ここ|こっち|こう|こんな|それ|そこ|あれ|この|こちら|その")
+PREFIX = re.compile(r"^Vector:.*?Cadence:[^.\[(]*(?:\[[^\]]*\]|\([^)]*\))?\.?\s*", re.S)
 
 
 def to_ms(h, m, s, ms):
@@ -75,6 +86,15 @@ def japanese_of(body):
     return ""
 
 
+def visual_of(body):
+    m = ANALYSIS.search("\n".join(body))
+    if not m:
+        return ""
+    lines = [l for l in m.group(1).strip().split("\n") if not l.strip().startswith("Gap Summary:")]
+    text = " ".join(" ".join(lines).split())
+    return PREFIX.sub("", text).strip()
+
+
 def main():
     ap = argparse.ArgumentParser(description="English subtitle next to the Japanese of the debug cues it overlaps.")
     ap.add_argument("srt", help="the working .srt (or the final .srt)")
@@ -82,6 +102,10 @@ def main():
     ap.add_argument("--from", dest="t_from", help="first time to show, HH:MM:SS")
     ap.add_argument("--to", dest="t_to", help="last time to show, HH:MM:SS")
     ap.add_argument("--cue-numbers", action="store_true", help="prefix each line with the cue number of the file")
+    ap.add_argument("--visual", action="store_true",
+                    help="add the visual analysis under the cues that point at something or are 3 words or fewer")
+    ap.add_argument("--visual-all", action="store_true", help="add the visual analysis under every cue")
+    ap.add_argument("--visual-chars", type=int, default=220, help="cut the visual line at N characters (default 220)")
     args = ap.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -100,8 +124,8 @@ def main():
         print("ERROR: debug file not found: %s (use --debug)" % debug, file=sys.stderr)
         return 2
 
-    refs = [(c["start"], c["end"], japanese_of(c["body"])) for c in read_cues(debug)]
-    refs = [r for r in refs if r[2]]
+    refs = [(c["start"], c["end"], japanese_of(c["body"]), visual_of(c["body"])) for c in read_cues(debug)]
+    refs = [r for r in refs if r[2] or r[3]]
     t_from = parse_time(args.t_from) if args.t_from else 0
     t_to = parse_time(args.t_to) if args.t_to else None
 
@@ -116,11 +140,18 @@ def main():
         english = " / ".join(l.strip() for l in body if l.strip())
         if english.startswith("Created by "):   # injected credit of a final .srt
             continue
-        ja = " ".join(j for (s, e, j) in refs if s < c["end"] and e > c["start"])
+        over = [r for r in refs if r[0] < c["end"] and r[1] > c["start"]]
+        ja = " ".join(r[2] for r in over if r[2])
         secs = c["start"] // 1000
         stamp = "%02d:%02d:%02d" % (secs // 3600, secs // 60 % 60, secs % 60)
         prefix = (c["number"] + " | ") if args.cue_numbers else ""
         print("%s%s | %s | %s" % (prefix, stamp, english, ja))
+        if args.visual_all or (args.visual and (DEICTIC.search(ja) or len(english.replace("/", " ").split()) <= 3)):
+            vis = " // ".join(r[3] for r in over if r[3])
+            if vis:
+                if len(vis) > args.visual_chars:
+                    vis = vis[: args.visual_chars].rstrip() + "..."
+                print("    VIS: " + vis)
         shown += 1
     print("-- %d subtitles shown, %d still with metadata skipped" % (shown, skipped), file=sys.stderr)
     return 0
