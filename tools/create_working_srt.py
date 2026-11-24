@@ -79,7 +79,11 @@ def parts_durations(folder):
     for line in read_text(os.path.join(folder, files[0])).lstrip("﻿").splitlines():
         m = re.match(r"^\s*(.+?)\s+(\d+):(\d{2}):(\d{2})[.,](\d{3})\s*$", line)
         if m:
-            result[m.group(1)] = to_ms(*m.groups()[1:5])
+            name = m.group(1)
+            # 'HNVR-141-A.mp4 00:29:40.970' (the documented format, same as finalize_srt.py): the key is the part name
+            if "." in name and name.lower().rsplit(".", 1)[1] in ("mp4", "mkv", "avi", "mov", "m4v", "webm", "wmv"):
+                name = name.rsplit(".", 1)[0]
+            result[name] = to_ms(*m.groups()[1:5])
         elif line.strip():
             raise ValueError("unexpected line in %s: %r" % (files[0], line))
     return result

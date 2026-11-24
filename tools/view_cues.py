@@ -183,7 +183,14 @@ def main():
             if base.endswith(suffix):
                 base = base[: -len(suffix)]
                 break
-        old_path = os.path.join(os.path.dirname(os.path.abspath(args.file)), base + ".OLD.srt")
+        folder = os.path.dirname(os.path.abspath(args.file))
+        old_path = os.path.join(folder, base + ".OLD.srt")
+        if not os.path.isfile(old_path):
+            # fallback: one long-named OLD file of the part ('<base> - Actress - Title.OLD.srt')
+            import glob
+            found = glob.glob(os.path.join(glob.escape(folder), glob.escape(base) + " *.OLD.srt"))
+            if len(found) == 1:
+                old_path = found[0]
         if not os.path.isfile(old_path):
             print("ERROR: --old: not found: " + old_path, file=sys.stderr)
             return 2

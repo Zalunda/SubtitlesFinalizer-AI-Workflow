@@ -123,9 +123,10 @@ def read_parts_durations(folder):
     return result
 
 
-# A part token is 1-3 capital letters / digits ('A', 'D', 'R1', '2'), written right after the scene id and followed by
-# either '.WIP.srt' or ' - <title>': 'HNVR-141-A.WIP.srt', 'PPVR-020-A - Mei Satsuki [x].WIP.srt', 'VRKM-0809-R1 - ... .WIP.srt'.
-PART_RE = re.compile(r"^(.*?)-([A-Z0-9]{1,3})(?: - .*)?\.WIP\.srt$")
+# A part token is 1-3 capital letters / digits ('A', 'D', 'R1', '2'), written right after the scene id (separator '-'
+# or '_') and followed by either '.WIP.srt' or ' - <title>': 'HNVR-141-A.WIP.srt', 'PPVR-020-A - Mei Satsuki [x].WIP.srt',
+# 'VRKM-0809-R1 - ... .WIP.srt', 'IPVR-380_2.WIP.srt'.
+PART_RE = re.compile(r"^(.*?)[-_]([A-Z0-9]{1,3})(?: - .*)?\.WIP\.srt$")
 
 
 def part_position(srt_path):

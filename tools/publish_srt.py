@@ -44,8 +44,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 TIMING = re.compile(r"\d\d:\d\d:\d\d[,.]\d\d\d\s*-->\s*\d\d:\d\d:\d\d[,.]\d\d\d")
-PART_RE = re.compile(r"^\S*?\d+[ -]([A-Z](?:-[A-Z])?)(?=[ .\[]|$)")
-PART_NUM_RE = re.compile(r"^\S*?\d+-([A-Z]?\d{1,2})(?=[ .\[]|$)")   # MNSVR-001-2, VRKM-0809-R1
+PART_RE = re.compile(r"^\S*?\d+[ _-]([A-Z](?:-[A-Z])?)(?=[ .\[]|$)")
+PART_NUM_RE = re.compile(r"^\S*?\d+[-_]([A-Z]?\d{1,2})(?=[ .\[]|$)")   # MNSVR-001-2, VRKM-0809-R1, IPVR-380_2
 PART_BRACKET_RE = re.compile(r"\[([A-Z])\]")                   # SSIS-698 - ... [D]
 
 
@@ -137,6 +137,10 @@ def find_all_videos(folders, video_name, scene, part):
     A copy = the file named video_name, or an .mp4 starting with '<scene>-<part>' + space/dash/dot (renamed video)."""
     wanted = video_name.lower()
     prefixes = {("%s-%s" % (scene, part)).lower()}
+    # a numbered part (TMAVR-269_2) is often renamed with its letter (TMAVR-269-B - ...): 1->A, 2->B...
+    num = release_part(os.path.splitext(video_name)[0])
+    if num and num.isdigit() and 1 <= int(num) <= 26:
+        prefixes.add(("%s-%s" % (scene, chr(64 + int(num)))).lower())
     # the folder name may differ from the video's id (3DSVR-647 vs 3DSVR-0647): also use the id taken from the file name
     m = re.match(r"^(\S*?\d+[ -]%s)(?=[ .\[]|$)" % re.escape(part), video_name)
     if m:
