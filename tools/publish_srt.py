@@ -241,6 +241,7 @@ def main():
 
     print("Scene %s: %d part(s)%s" % (scene, len(wips), "" if apply_it else "  [DRY RUN: nothing is written]"))
     problems = 0
+    no_scene_asig = []   # parts with no <base>.asig in the scene folder (warning only)
     parts = []   # (part label, final, [(video, real_srt, asig), ...])
     for wip in wips:
         base = wip[: -len(".WIP.srt")]
@@ -262,6 +263,12 @@ def main():
             print("   WARNING: the WIP is newer than the final .srt: run finalize_srt.py again")
             problems += 1
         print("   final: %d cues, %s" % (count_cues(final), kb(final)))
+        scene_asig = base + ".asig"   # the audio signature of the video the timings were made on, kept in the scene folder
+        if os.path.isfile(scene_asig):
+            print("   scene .asig: %s, %s" % (os.path.basename(scene_asig), kb(scene_asig)))
+        else:
+            print("   WARNING: no %s in the scene folder (copy it from the toolbox work folder)" % os.path.basename(scene_asig))
+            no_scene_asig.append(part)
         cfg = ea.load_config(final)
         videos = find_all_videos(cfg["VideoFolders"], name + ".mp4", scene, part)
         if not videos:
@@ -314,6 +321,9 @@ def main():
     for part, real in changed:
         print("  [%s] %s" % (part, real))
     print("Already up to date: %d" % len(unchanged))
+    if no_scene_asig:
+        print("\nWARNING: no .asig in the scene folder for part(s) %s: copy the .asig of the toolbox work folder "
+              "next to the .WIP.srt as <base>.asig" % ", ".join(no_scene_asig))
     if skipped:
         print("\nNOT CHANGED, the video file has a different size than the first copy (%d). Add the subtitles to those versions?" % len(skipped))
         for part, real in skipped:
@@ -348,6 +358,8 @@ def main():
         print("\n== RELEASE folder: %s  (title: %s)" % (rdir, title or "-"))
         for part, final, entries in parts:
             asig = entries[0][2] if entries else None   # the first copy in search order
+            if not asig and os.path.isfile(final[: -len(".srt")] + ".asig"):
+                asig = final[: -len(".srt")] + ".asig"   # no .asig next to the video: use the one kept in the scene folder
             pattern = pcfg["ReleaseNameWithTitle"] if args.title else pcfg["ReleaseNameNoTitle"]
             rpart = release_part(os.path.basename(final)[: -len(".srt")])
             if rpart is None:   # a single file with no part token: "<scene>.srt", not "<scene>-<whole file name>.srt"

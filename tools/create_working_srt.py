@@ -165,11 +165,20 @@ def find_pairs(folder):
     return pairs
 
 
+def warn_no_asig(debug_path):
+    """The audio signature of the video the timings were made on (<base>.asig) is kept in the scene folder."""
+    asig = debug_path[: -len(DEBUG_SUFFIX)] + ".asig"
+    if not os.path.isfile(asig):
+        print("WARNING: no %s in the scene folder: copy the .asig of this part from the toolbox work folder "
+              "(it links the subtitles to the video they were timed on)" % os.path.basename(asig), file=sys.stderr)
+
+
 def process(debug_path, terrain_path, min_ms):
     name = os.path.basename(debug_path)
     if not name.endswith(DEBUG_SUFFIX):
         print("ERROR: not a *%s file: %s" % (DEBUG_SUFFIX, debug_path), file=sys.stderr)
         return 1
+    warn_no_asig(debug_path)
     out_path = os.path.join(os.path.dirname(debug_path), name[: -len(DEBUG_SUFFIX)] + ".WIP.srt")
     if os.path.exists(out_path):
         print("skipped (the WIP file already exists, not overwritten): " + out_path)
