@@ -18,8 +18,8 @@
   "repeats": [
     { "id": "cum-repeat", "severity": "info", "pattern": "\\b(cum|cums|cumming|came|cummed)\\b", "window": 6, "max": 3,
       "message": "'cum' keeps coming back: vary (finish, let go, shoot, blow, give in, lose it, juice, 'already?', 'close?')" },
-    { "id": "boobs-repeat", "severity": "info", "pattern": "\\b(boobs|tits)\\b", "window": 5, "max": 3,
-      "message": "'boobs' repeated: use 'them' / drop the noun sometimes" },
+    { "id": "boobs-repeat", "severity": "info", "pattern": "\\b(boobs|tits|breasts)\\b", "window": 5, "max": 3,
+      "message": "'boobs' / 'breasts' repeated: use 'them' / drop the noun sometimes" },
     { "id": "cock-repeat", "severity": "info", "pattern": "\\bcock\\b", "window": 5, "max": 3,
       "message": "'cock' repeated: use 'it' / an agency variant sometimes" },
     { "id": "so-good-repeat", "severity": "info", "pattern": "\\bso (damn )?good\\b", "window": 6, "max": 4,

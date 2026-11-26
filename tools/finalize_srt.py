@@ -25,6 +25,7 @@ Config file (JSON, same shape as the FunscriptToolbox output rule). Looked up in
           "Lines": ["line 1", "line 2"] }
       ]
     }
+  Lines: "{date}" is replaced by the date of the run (yyyy-mm-dd, e.g. "Created by Zalunda ({date})").
   Origin "Start": the subtitle starts at OffsetTime from the start of the video; its end is shortened if a dialogue
                   subtitle starts before (e.g. credits 0-10 s, first dialogue at 3.07 s -> credits 0-3.07 s).
   Origin "End":   the subtitle STARTS OffsetTime before the end of the part's video (video duration - OffsetTime) and
@@ -50,6 +51,7 @@ Usage:
 Only the Python standard library is needed.
 """
 import argparse
+import datetime
 import json
 import os
 import re
@@ -190,6 +192,7 @@ def main():
                 extend_ms = parse_timespan(cfg.get("ExpandSubtileDuration", cfg.get("ExpandSubtitleDuration")))
             if "MinimumSubtitleDuration" in cfg:
                 min_ms = parse_timespan(cfg["MinimumSubtitleDuration"])
+            today = datetime.date.today().isoformat()
             for inj in cfg.get("SubtitlesToInject", []) or []:
                 origin = inj["Origin"]
                 if origin not in ("Start", "End"):
@@ -199,7 +202,7 @@ def main():
                     "all": bool(inj.get("InjectInAllFiles", True)),
                     "offset": parse_timespan(inj["OffsetTime"]),
                     "duration": parse_timespan(inj["Duration"]),
-                    "lines": [str(x) for x in inj["Lines"]],
+                    "lines": [str(x).replace("{date}", today) for x in inj["Lines"]],
                 })
         except (ValueError, KeyError, json.JSONDecodeError) as e:
             print("ERROR: bad config %s: %s" % (config_path, e), file=sys.stderr)
